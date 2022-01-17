@@ -78,7 +78,11 @@ class StoreService {
             url: newurl,
             //url : this.url + `/${store._id}`,
             dataType: 'json',
-            data:  JSON.stringify(store),
+            //data:  JSON.stringify(store),
+            data: JSON.stringify({
+                "store" : store.name,
+                "items" : store.items
+            }),
             contentType: 'application/json',
             type: 'PUT',
             headers: {'Accept': 'application/json',
