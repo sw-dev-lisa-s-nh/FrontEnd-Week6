@@ -61,9 +61,9 @@ class StoreService {
             dataType: 'json',
             contentType: 'application/json',
             data: JSON.stringify(store),
-            type: 'POST'
-            // headers: {'Accept': 'application/json',
-            //           'Content-Type': 'application/json'}
+            type: 'POST',
+            headers: {'Accept': 'application/json',
+                      'Content-Type': 'application/json'}
             //headers: {'Origin': 'http://127.0.0.1:8080', 'Accept' : 'application/json'}
         });
         //return $.post(this.url, store);
@@ -72,12 +72,17 @@ class StoreService {
     // UPDATE store, where
     //              store is an instance of the Store class!
     static updateStore(store) {
+        let newurl = this.url + `/${store._id}`;
+        console.log(newurl);
         return $.ajax({
-            url:  this.url + `/${store._id}`,
+            url: newurl,
+            //url : this.url + `/${store._id}`,
             dataType: 'json',
             data:  JSON.stringify(store),
             contentType: 'application/json',
-            type: 'PUT'
+            type: 'PUT',
+            headers: {'Accept': 'application/json',
+                      'Content-Type': 'application/json'}
         });
     }
 
