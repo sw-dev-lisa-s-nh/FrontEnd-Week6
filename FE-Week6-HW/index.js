@@ -8,9 +8,8 @@ class Store {
         this.name = name;
         this.items = [];
     }
-
     addItem(name, price, company) {
-        this.items.push(new Item(name,price,company));
+        this.items.push(new Item(name, price, company));
     }
 } // end of Store class
 
@@ -33,9 +32,31 @@ class Company {
     }
 }
 
+// class ItemService {
+//     static itemUrl =  'https://crudcrud.com/api/467446f2b41f4ea58e1a553fd9faaf72/items';
+//     static createItem(item) {
+//         console.log(this.url);
+//         return $.ajax({
+//             url: this.itemUrl,
+//             dataType: 'json',
+//             contentType: 'application/json',
+//             data: JSON.stringify(item),
+//             type: 'POST',
+//             headers: {'Accept': 'application/json',
+//                       'Content-Type': 'application/json'}
+//             //headers: {'Origin': 'http://127.0.0.1:8080', 'Accept' : 'application/json'}
+//         });
+//         //return $.post(this.url, store);   
+//     }
+
+//      // GET ONE by id
+//      static getItem(name) {
+//         return $.get(this.url + `/name: ${name}`);
+//     }
+// }
+
 
 class StoreService {
-    // What url should I use here???
     static url =  'https://crudcrud.com/api/467446f2b41f4ea58e1a553fd9faaf72/stores';
 
     //CRUD Operations 
@@ -61,39 +82,29 @@ class StoreService {
             dataType: 'json',
             contentType: 'application/json',
             data: JSON.stringify(store),
-            type: 'POST',
-            headers: {'Accept': 'application/json',
-                      'Content-Type': 'application/json'}
-            //headers: {'Origin': 'http://127.0.0.1:8080', 'Accept' : 'application/json'}
+            type: 'POST'
         });
-        //return $.post(this.url, store);
     }
 
     // UPDATE store, where
     //              store is an instance of the Store class!
     static updateStore(store) {
-        let newurl = this.url + `/${store._id}`;
-        console.log(newurl);
         return $.ajax({
-            url: newurl,
-            //url : this.url + `/${store._id}`,
+            url : `${this.url}/${store._id}`,
             dataType: 'json',
-            //data:  JSON.stringify(store),
+            contentType: 'application/json',
             data: JSON.stringify({
-                "store" : store.name,
+                "name" : store.name,
                 "items" : store.items
             }),
-            contentType: 'application/json',
-            type: 'PUT',
-            headers: {'Accept': 'application/json',
-                      'Content-Type': 'application/json'}
+            type: 'PUT'
         });
     }
 
     // DELETE ONE by id
     static deleteStore(id) {
         return $.ajax({
-            url:  this.url + `/${id}`,
+            url:  `${this.url}/${id}`,
             type: 'DELETE'
         });
     }
@@ -104,7 +115,8 @@ class DOMManager {
     static stores;
 
     static getAllStores() {
-        StoreService.getAllStores().then((stores) => this.render(stores));
+        console.log("DOMManager.getAllStores()");
+        StoreService.getAllStores().then(stores => this.render(stores));
     }
 
     static createStore(name) {
@@ -125,37 +137,55 @@ class DOMManager {
             })
             .then((stores) => this.render(stores));       
     } // end of deleteStore()
+
+    // static createItem(item) {
+    //     console.log(`Creating an item named: ${item.name}!`);
+    //     ItemService.createItem(item)
+    //     .then(() => {
+    //         return StoreService.getAllStores();
+    //     })
+    //     .then((stores) => this.render(stores));
+    // }
     
     static addItem(id) {
         for (let store of this.stores) {
+        //for (let i = 0; i < this.stores.length; i++) {
+            //const store = this.stores[i];
             if (store._id == id) {
                 store.items.push(new Item($(`#${store._id}-item-name`).val(), $(`#${store._id}-item-price`).val(), $(`#${store._id}-item-company`).val()));
-                console.log(`New item added to store ${store.name}!`);
-                console.log(store);
                 StoreService.updateStore(store)
                     .then(() => {
                         return StoreService.getAllStores();
                     })
-                    .then((stores) => this.render(stores));
+                    .then(stores => this.render(stores));
+                console.log(`New item added to store ${store.name}`);
             } // end of if store match is found
         } // end of for-loop through stores
     } // end of addItem()
 
 
-    static deleteItem(storeId, itemId) {
-        for (let store of this.stores) {
+    static deleteItem(storeId, itemName) {
+        //for (let store of this.stores) {
+        for (let i = 0; i < this.stores.length; i++) {
+            const store = this.stores[i];
             if (store._id == storeId) {
                 // this is the right store!!  Now look for the item with itemId
-                for (let item of store.items) {
-                    if (item._id == itemId) {
-                        console.log(`Deleting item:  ${item.name} from store: ${store.name}`);
+                for (let i = 0; i < store.items.length; i++) {
+                    // There is no stored ID, so we need to look by NAME
+                    const item = store.items[i];
+                    if (item.name == itemName) {
                         //this is the right item, within the right store!
-                        store.items.splice(store.items.indexOf(item), 1);
+                        store.items.splice(i, 1);
                         StoreService.updateStore(store)
                             .then(() => {
+                                console.log("Update fired");
                                 return StoreService.getAllStores();
-                             })
-                             .then((stores) => this.render(stores));
+                            })
+                            .then(stores => {
+                                console.log("Render pending...");
+                                this.render(stores);
+                            });
+                        console.log(`Deleting item:  ${itemName} from store: ${store.name}`);
                     } // end of if correct item check
                 } // end of items for-loop within stores for-loop
             } // end of if correct store check
@@ -164,15 +194,18 @@ class DOMManager {
 
     static render(stores) {
         this.stores = stores;
-        $('#storeList').empty();
+        $('#app').empty();
+        console.log('Emptied the DOM #app');
 
-        for (let store of stores) {
-            $('#storeList').prepend(
+        for (let i = 0; i < stores.length; i++) {
+        //for (let store of stores) {
+            const store = stores[i];
+            $('#app').prepend(
                 `
-                <br><div id="${store._id}" class="card">
+                <div id="${store._id}" class="card">
                     <div class="card-header">
                         <h2>${store.name}</h2>
-                        <button class="btn btn-primary" onclick="DOMManager.deleteStore('${store._id}')">Delete Store</button>
+                        <button class="btn btn-warning" onclick="DOMManager.deleteStore('${store._id}')">Delete Store</button>
                     </div>
                     <div class="card-body">
                         <div class="card">
@@ -187,27 +220,32 @@ class DOMManager {
                                     <input type="text" id="${store._id}-item-company" class="form-control" placeholder="Name of Company">
                                 </div>
                             </div>
-                            <button id="${store._id}-new-item" onclick="DOMManager.addItem('${store._id}')" class="btn btn-primary form-control">Add Item</button>
+                            <button id="${store._id}-new-item" onclick="DOMManager.addItem('${store._id}')" class="btn btn-primary form-control">Add</button>
                         </div>
                     </div>
-                </div><br>`
+                </div>
+                <br>`
             );
-            for (let item of store.items) {
-                // find the store._id for this element, 
+
+               //for (let item of store.items) {
+                    // find the store._id for this element, 
                 //       and then find the card body for that store, via the "_id"
                 //      and append each item to the store!!
-                $(`#${store._id}`).find('.card-body').append(
+            for (let i = 0; i < store.items.length; i++) {
+                const item = store.items[i];     
+                $(`#${store._id}`).find(".card-body").append(
                     `<p>
-                        <span id="name-${item._id}"><strong>Item Name: </strong> ${item.name}</span>
-                        <span id="area-${item._id}"><strong>Item Price: </strong> ${item.price}</span>
-                        <span id="company-${item._id}"><strong>Company: </strong> ${item.company}</span>
-                        <button class="btn btn-danger" onclick="DOMManager.deleteItem('${store._id}', '${item._id}')">Delete Item</button>
+                        <span id="name-${item.name}"><strong>Item Name: </strong> ${item.name}</span>
+                        <span id="price-${item.name}"><strong>Item Price: </strong> ${item.price}</span>
+                        <span id="company-${item.name}"><strong>Company: </strong> ${item.company}</span>
+                        <button class="btn btn-warning" onclick="DOMManager.deleteItem('${store._id}', '${item.name}')">Delete</button>
                     `
                 );
             } // end of for-loop to append items to the store.
         } // end of for-loop for each store.
     } // end of render()
 } // end of DOMManager();
+
 
 $('#create-new-store').on('click', () => {
     console.log("New Store!");
