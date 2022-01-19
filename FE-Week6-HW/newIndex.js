@@ -1,19 +1,23 @@
 'use strict';
+
 class Store {
-    constructor(name) {
+    constructor(name, city, state) {
         this.name = name;
+        this.city = city;
+        this.state = state;
         this.products = [];
     }
-    // addProduct(name, price, company) {
-    //     this.products.push(new Product(name, price, company));
-    // }
+    addProduct(name, price, company, quantity) {
+        this.products.push(new Product(name, price, company, quantity));
+    }
 } 
 
 class Product {
-    constructor(name, price, company) {
+    constructor(name, price, company, quantity) {
         this.name = name;
         this.price = price;
         this.company = company;
+        this.quantity = quantity;
     }
 }  
 
@@ -50,15 +54,15 @@ class StoreService {
     // UPDATE store, where
     //              store is an instance of the Store class!
     static updateStore(store) {
-        return $.ajax({
-            url : `${this.url}/${store._id}`,
-            cache: false,
-            dataType: 'json',
-            data: JSON.stringify({"name" : store.name,"products" : store.products}),
-            contentType: 'application/json',
-            type: 'PUT'
+        return fetch(  `${this.url}/${store._id}`, {
+            method: 'PUT',
+            headers : new Headers ({
+                    'Content-Type': 'application/json'
+            }),      
+            body: JSON.stringify({"name" : store.name, "city" : store.city, "state" : store.state, "products" : store.products}),
         });
     }
+
 
     // DELETE ONE by id
     static deleteStore(id) {
@@ -74,13 +78,12 @@ class DOMManager {
     static stores;
 
     static getAllStores() {
-        console.log("DOMManager.getAllStores()");
         StoreService.getAllStores().then(stores => this.render(stores));
     }
 
-    static createStore(name) {
+    static createStore(name,city,state) {
         console.log(`Creating a store named: ${name}!`);
-        StoreService.createStore(new Store(name))
+        StoreService.createStore(new Store(name,city,state))
             .then(() => {
                 return StoreService.getAllStores();
             })
@@ -98,53 +101,94 @@ class DOMManager {
     } // end of deleteStore()
 
     static addProduct(id) {
-        for (let store of this.stores) {
+        for (const store of this.stores) {
             if (store._id == id) {
-                store.products.push(new Product($(`#${store._id}-product-name`).val(), $(`#${store._id}-product-price`).val(), $(`#${store._id}-product-company`).val()));
+                store.products.push(new Product($(`#${store._id}-product-name`).val(), $(`#${store._id}-product-price`).val(), $(`#${store._id}-product-company`).val(), $(`#${store._id}-product-quantity`).val()));
+                console.log('Adding product:' + $(`#${store._id}-product-name`).val());
                 StoreService.updateStore(store)
                     .then(() => {
-                        return StoreService.getAllStores();
-                    })
-                    .done(stores => this.render(stores));
+                        return DOMManager.getAllStores();
+                    });
             } // end of if store match is found
         } // end of for-loop through stores
     } // end of addProduct()
 
     static deleteProduct(storeId, productName) {
-        for (let store of this.stores) {
+        for (const store of this.stores) {
             if (store._id == storeId) {
                 for (let i = 0; i < store.products.length; i++) {
                     const product = store.products[i];
                     if (product.name == productName) {
                         store.products.splice(i, 1);
+                        console.log('Deleting product: ' + productName);
                         StoreService.updateStore(store)
                             .then(() => {
-                                return StoreService.getAllStores();
-                            })
-                            .done(stores => this.render(stores));                        
+                                return DOMManager.getAllStores();
+                            });                     
                     } // end of if correct product check
                 } // end of products for-loop within stores for-loop
             } // end of if correct store check
         } // end of stores for-loop
     } // end of deleteProduct() 
 
+    static decrementProduct(storeId, productName) {
+        for (const store of this.stores) {
+            if (store._id == storeId) {
+                for (let i = 0; i < store.products.length; i++) {
+                    const product = store.products[i];
+                    if (product.name == productName) {
+                        if (store.products[i].quantity == 0) {
+                            console.log(`No product: ${store.products[i].name} out of stock!`)
+                        } else {
+                            store.products[i].quantity -= 1;
+                            console.log('Decremented ' + productName + ' quantity.  New total: ' + `${store.products[i].quantity}`);
+                            StoreService.updateStore(store)
+                                .then(() => {
+                                    return DOMManager.getAllStores();
+                                });       
+                        } // end of if-else loop              
+                    } // end of if correct product check
+                } // end of products for-loop within stores for-loop
+            } // end of if correct store check
+        } // end of stores for-loop
+    } // end of decrementProduct() 
+
+    static incrementProduct(storeId, productName) {
+        for (const store of this.stores) {
+            if (store._id == storeId) {
+                for (let i = 0; i < store.products.length; i++) {
+                    const product = store.products[i];
+                    if (product.name == productName) { 
+                        store.products[i].quantity += 1;
+                        console.log('Incremented ' + productName + ' quantity.  New total: ' + `${store.products[i].quantity}`);
+                        StoreService.updateStore(store)
+                            .then(() => {
+                                return DOMManager.getAllStores();
+                            });       
+                    } // end of if correct product check
+                } // end of products for-loop within stores for-loop
+            } // end of if correct store check
+        } // end of stores for-loop
+    } // end of incrementProduct() 
+
     static render(stores) {
         this.stores = stores;
         $('#app').empty();
-        console.log('Emptied the DOM #app');
+        //console.log('Emptied the DOM #app');
         for (let store of stores) {
-            console.log(`In store loop:  ${store.name}`);
+            //console.log(`In store loop:  ${store.name}`);
             $('#app').prepend(
                 `
-                <br><div id="${store._id}" class="card">
+                <br><div id="${store._id}" class="card border border-success">
                     <div class="card-header">
                         <h2>${store.name}</h2>
-                        <button class="btn btn-success" onclick="DOMManager.deleteStore('${store._id}')">Delete Store</button>
+                        <h6>Located in ${store.city}, ${store.state}</h6>
+                        <button class="btn btn-danger" onclick="DOMManager.deleteStore('${store._id}')">Delete Store</button>
                     </div>
                     <div class="card-body">
                         <div class="card">
                             <div class="row">
-                                <div class="col-sm">
+                                <div class="col-sm center">
                                     <input type="text" id="${store._id}-product-name" class="form-control" placeholder="Product Name">
                                 </div>
                                 <div class="col-sm">
@@ -153,35 +197,42 @@ class DOMManager {
                                 <div class="col-sm">
                                     <input type="text" id="${store._id}-product-company" class="form-control" placeholder="Name of Company">
                                 </div>
+                                <div class="col-sm">
+                                    <input type="text" id="${store._id}-product-quantity" class="form-control" placeholder="Quantity in Stock">
+                                </div>
                             </div>
-                            <button id="${store._id}-new-product" class="btn btn-primary form-control">Add</button>
+                            <br>
+                            <button id="${store._id}-new-product" onclick="DOMManager.addProduct('${store._id}')" class="btn btn-primary form-control">Add Product</button>
                         </div>
                     </div>
                 </div><br>`
             );
             //document.getElementById(`${store._id}-new-product`).setEvent = DOMManager.addProduct(`${store._id}`);
-            $(`#${store._id}-new-product`).on('click', () => {
-                console.log("New Product!");
-                DOMManager.addProduct(`${store._id}`);
-            });            
-            // How do I check if this doesn't have any products??
+            // $(`#${store._id}-new-product`).on('click', () => {
+            //     console.log("New Product!");
+            //     DOMManager.addProduct(`${store._id}`);
+            // });            
             if (store.products == null) {
                 console.log(`Product list for store: ${store.name} is empty!`);
             } else {
-                for (let product of store.products) {  
-                    console.log(`In product loop:  ${product.name}`);
+                $(`#${store._id}`).find('.card-body').append(`<br>`);
+                for (const product of store.products) {  
+                    //console.log(`In product loop:  ${product.name}`);
                     $(`#${store._id}`).find('.card-body').append(
                         `<p>
-                            <span id="name-${product.name}"><strong>product Name: </strong> ${product.name}</span>
-                            <span id="price-${product.name}"><strong>product Price: </strong> ${product.price}</span>
-                            <span id="company-${product.name}"><strong>Company: </strong> ${product.company}</span>
-                            <button id="${store._id}-${product.name}-delete-product" class="btn btn-success">Delete</button>
-                        `
+                            <span id="name-${product.name}"><strong>Product Name: </strong> ${product.name}</span>
+                            <span id="price-${product.name}"><strong>&nbsp;Product Price: </strong> ${product.price}</span><br>
+                            <span id="company-${product.name}"><strong>&nbsp;&nbsp;&nbsp;Company: </strong> ${product.company}</span>
+                            <span id="quantity-${product.name}"><strong>&nbsp;Quantity: </strong> ${product.quantity}&nbsp;&nbsp;</span>
+                            <button id="${store._id}-${product.name}-increment-product-quantity" onclick="DOMManager.incrementProduct('${store._id}', '${product.name}')"  class="btn btn-success">Increment Quantity</button>
+                            <button id="${store._id}-${product.name}-decrement-product-quantity" onclick="DOMManager.decrementProduct('${store._id}', '${product.name}')"  class="btn btn-warning">Decrement Quantity</button>
+                            <button id="${store._id}-${product.name}-delete-product" onclick="DOMManager.deleteProduct('${store._id}', '${product.name}')"  class="btn btn-danger">Delete Product</button>&nbsp;&nbsp;
+                            `
                     );
-                    $(`#${store._id}-${product.name}-delete-product`).on('click', () => {
-                        console.log("Delete Product!");
-                        DOMManager.deleteProduct(`${store._id}`, `${product.name}`);
-                    });          
+                    // $(`#${store._id}-${product.name}-delete-product`).on('click', () => {
+                    //     console.log("Delete Product!");
+                    //     DOMManager.deleteProduct(`${store._id}`, `${product.name}`);
+                    // });          
                 } // end of for-loop to append products to the store.
             } // end of if-else empty product list for store
         } // end of for-loop for each store.
@@ -191,8 +242,10 @@ class DOMManager {
 
 $('#create-new-store').on('click', () => {
     console.log("New Store!");
-    DOMManager.createStore($('#new-store-name').val());
-    $('#new-store-name').val(' ');
+    DOMManager.createStore($('#new-store-name').val(), $('#new-store-city').val(), $('#new-store-state').val());
+    $('#new-store-name').val('');
+    $('#new-store-city').val('');
+    $('#new-store-state').val('');
 });
 
 DOMManager.getAllStores();
