@@ -57,7 +57,7 @@ class Company {
 
 
 class StoreService {
-    static url =  'https://crudcrud.com/api/467446f2b41f4ea58e1a553fd9faaf72/stores';
+    static url =  "https://crudcrud.com/api/467446f2b41f4ea58e1a553fd9faaf72/stores";
 
     //CRUD Operations 
     //      These all need to return what is returned, because we are
@@ -92,11 +92,12 @@ class StoreService {
         return $.ajax({
             url : `${this.url}/${store._id}`,
             dataType: 'json',
+            async: false,
+            cache: false,
             contentType: 'application/json',
             data: JSON.stringify({
                 "name" : store.name,
-                "items" : store.items
-            }),
+                "items" : store.items}),
             type: 'PUT'
         });
     }
@@ -132,7 +133,7 @@ class DOMManager {
     static deleteStore(id) {
         console.log(`Deleting a store!`);
         StoreService.deleteStore(id)
-            .then(() => {
+            .done(() => {
                 return StoreService.getAllStores();
             })
             .then((stores) => this.render(stores));       
@@ -154,11 +155,12 @@ class DOMManager {
             if (store._id == id) {
                 store.items.push(new Item($(`#${store._id}-item-name`).val(), $(`#${store._id}-item-price`).val(), $(`#${store._id}-item-company`).val()));
                 StoreService.updateStore(store)
-                    .then(() => {
+                    .done(() => {
                         return StoreService.getAllStores();
                     })
-                    .then(stores => this.render(stores));
-                console.log(`New item added to store ${store.name}`);
+                    .done(stores => this.render(stores));
+                    //.fail(function() {console.log('addItem update failed!')});
+                // console.log(`New item added to store ${store.name}`);
             } // end of if store match is found
         } // end of for-loop through stores
     } // end of addItem()
@@ -177,15 +179,17 @@ class DOMManager {
                         //this is the right item, within the right store!
                         store.items.splice(i, 1);
                         StoreService.updateStore(store)
-                            .then(() => {
+                            .done(() => {
                                 console.log("Update fired");
                                 return StoreService.getAllStores();
                             })
-                            .then(stores => {
-                                console.log("Render pending...");
-                                this.render(stores);
-                            });
-                        console.log(`Deleting item:  ${itemName} from store: ${store.name}`);
+                            .done(stores => this.render(stores));
+                            // .then((stores) => {
+                            //     console.log("Render pending...");
+                            //     this.render(stores);
+                            // })
+                            //.fail(function() {console.log('deleteItem update failed!')});
+                        // console.log(`Deleting item:  ${itemName} from store: ${store.name}`);
                     } // end of if correct item check
                 } // end of items for-loop within stores for-loop
             } // end of if correct store check
@@ -197,15 +201,15 @@ class DOMManager {
         $('#app').empty();
         console.log('Emptied the DOM #app');
 
-        for (let i = 0; i < stores.length; i++) {
-        //for (let store of stores) {
-            const store = stores[i];
+        //for (let i = 0; i < stores.length; i++) {
+        // const store = stores[i];
+        for (let store of stores) {
             $('#app').prepend(
                 `
-                <div id="${store._id}" class="card">
+                <br><div id="${store._id}" class="card">
                     <div class="card-header">
                         <h2>${store.name}</h2>
-                        <button class="btn btn-warning" onclick="DOMManager.deleteStore('${store._id}')">Delete Store</button>
+                        <button class="btn btn-success" onclick="DOMManager.deleteStore('${store._id}')">Delete Store</button>
                     </div>
                     <div class="card-body">
                         <div class="card">
@@ -223,22 +227,22 @@ class DOMManager {
                             <button id="${store._id}-new-item" onclick="DOMManager.addItem('${store._id}')" class="btn btn-primary form-control">Add</button>
                         </div>
                     </div>
-                </div>
-                <br>`
+                </div><br>`
             );
 
-               //for (let item of store.items) {
+              
                     // find the store._id for this element, 
                 //       and then find the card body for that store, via the "_id"
                 //      and append each item to the store!!
-            for (let i = 0; i < store.items.length; i++) {
-                const item = store.items[i];     
-                $(`#${store._id}`).find(".card-body").append(
+            // for (let i = 0; i < store.items.length; i++) {
+            //     const item = store.items[i];   
+            for (let item of store.items) {  
+                $(`#${store._id}`).find('.card-body').append(
                     `<p>
                         <span id="name-${item.name}"><strong>Item Name: </strong> ${item.name}</span>
                         <span id="price-${item.name}"><strong>Item Price: </strong> ${item.price}</span>
                         <span id="company-${item.name}"><strong>Company: </strong> ${item.company}</span>
-                        <button class="btn btn-warning" onclick="DOMManager.deleteItem('${store._id}', '${item.name}')">Delete</button>
+                        <button class="btn btn-success" onclick="DOMManager.deleteItem('${store._id}', '${item.name}')">Delete</button>
                     `
                 );
             } // end of for-loop to append items to the store.
