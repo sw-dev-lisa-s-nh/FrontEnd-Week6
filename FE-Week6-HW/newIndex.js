@@ -182,7 +182,7 @@ class DOMManager {
             //console.log(`In store loop:  ${store.name}`);
             $('#app').prepend(
                 `
-                <br><div id="${store._id}" class="card border border-success">
+                <br><div id="${store._id}" class="card border border-primary">
                     <div class="card-header">
                         <h2>${store.name}</h2>
                         <h6>Located in ${store.city}, ${store.state}</h6>
