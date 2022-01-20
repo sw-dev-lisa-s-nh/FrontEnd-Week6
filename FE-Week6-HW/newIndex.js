@@ -1,5 +1,9 @@
 'use strict';
 
+// This is a Store Inventory System.  
+//          A Store can be added with the location.  
+//          and a list for the products that are found.
+// The List of products will be completed by adding a product with the form.
 class Store {
     constructor(name, city, state) {
         this.name = name;
