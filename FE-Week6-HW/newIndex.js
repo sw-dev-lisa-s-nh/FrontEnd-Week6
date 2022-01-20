@@ -90,7 +90,6 @@ class DOMManager {
             .then((stores) => this.render(stores));
     } // end of createStore()
 
-
     static deleteStore(id) {
         console.log(`Deleting a store!`);
         StoreService.deleteStore(id)
@@ -159,7 +158,7 @@ class DOMManager {
                 for (let i = 0; i < store.products.length; i++) {
                     const product = store.products[i];
                     if (product.name == productName) { 
-                        store.products[i].quantity += 1;
+                        store.products[i].quantity++;
                         console.log('Incremented ' + productName + ' quantity.  New total: ' + `${store.products[i].quantity}`);
                         StoreService.updateStore(store)
                             .then(() => {
@@ -206,12 +205,7 @@ class DOMManager {
                         </div>
                     </div>
                 </div><br>`
-            );
-            //document.getElementById(`${store._id}-new-product`).setEvent = DOMManager.addProduct(`${store._id}`);
-            // $(`#${store._id}-new-product`).on('click', () => {
-            //     console.log("New Product!");
-            //     DOMManager.addProduct(`${store._id}`);
-            // });            
+            );      
             if (store.products == null) {
                 console.log(`Product list for store: ${store.name} is empty!`);
             } else {
@@ -228,11 +222,7 @@ class DOMManager {
                             <button id="${store._id}-${product.name}-decrement-product-quantity" onclick="DOMManager.decrementProduct('${store._id}', '${product.name}')"  class="btn btn-warning">Decrement Quantity</button>
                             <button id="${store._id}-${product.name}-delete-product" onclick="DOMManager.deleteProduct('${store._id}', '${product.name}')"  class="btn btn-danger">Delete Product</button>&nbsp;&nbsp;
                             `
-                    );
-                    // $(`#${store._id}-${product.name}-delete-product`).on('click', () => {
-                    //     console.log("Delete Product!");
-                    //     DOMManager.deleteProduct(`${store._id}`, `${product.name}`);
-                    // });          
+                    );   
                 } // end of for-loop to append products to the store.
             } // end of if-else empty product list for store
         } // end of for-loop for each store.
